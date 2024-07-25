@@ -117,8 +117,8 @@ train_indices = permutation[:num_train_nodes] # vettore che contiene i primi 900
 # I restanti nodi come nodi di test
 test_indices = permutation[num_train_nodes:] # vettore che contiene gli altri 600 indici  (test)
 
-# Divido i 900 indici di training in 70% training (600 indici) e 30% validation (300 indici)
-train_indices, val_indices = train_test_split(train_indices, test_size=0.3, random_state=1, shuffle=True)
+# Divido i 900 indici di training in 80% training (700 indici) e 20% validation (200 indici)
+train_indices, val_indices = train_test_split(train_indices, test_size=0.2, random_state=1, shuffle=True)
 
 # Crea le maschere di training e test
 train_mask = torch.zeros(data.num_nodes, dtype=torch.bool) # vettore di 1490 booleani falsi
@@ -136,15 +136,19 @@ data.val_mask = val_mask
 # VALIDATION (TO SELECT THE BEST HYPERPARAMETERS)
 # Grid Search parameters
 param_grid = {
-    'hidden_dim': [10],
-    'lr': [0.01],
-    'head':[16],
+    'hidden_dim': [8, 16],
+    'lr': [0.01, 0.001],
+    'head':[8, 16],
     'optimizer':[torch.optim.Adagrad, torch.optim.Adam, torch.optim.RMSprop]
 }
 
-def translate_class(cl):
-    print(cl)
-    return re.sub('<class \'torch\.optim\.', '', string=cl)
+def translate_optimizer(opt):
+    if (type(opt) == torch.optim.Adam):
+        return "Adam"
+    elif (type(opt) == torch.optim.Adagrad):
+        return "Adagrad"
+    elif (type(opt) == torch.optim.RMSprop):
+        return "RMSprop"
 
 def train(data, mask, model):
     model.train()
@@ -176,13 +180,12 @@ for hidden_dim, lr, head, optimizer in itertools.product(param_grid['hidden_dim'
     criterion = torch.nn.CrossEntropyLoss()
     losses = []
     # alleno tutti i modelli
-    for epoch in range(150):
+    for epoch in range(200):
         loss = train(data, train_mask, gat)
         if torch.isnan(loss):
             break
         losses.append(loss.detach().item())
-    # plt.title(f'Training modello con hidden_dim = {hidden_dim}, LR iniziale = {lr}, heads = {head} e optimizer = {translate_class(str(type(optimizer)))}')
-    plt.title(f'Training modello con optimizer = {translate_class(str(type(optimizer)))}')
+    plt.title(f'Training modello con hidden_dim = {hidden_dim}, LR iniziale = {lr}, \nheads = {head} e optimizer = {translate_optimizer(optimizer)}')
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.plot(losses)
@@ -210,7 +213,7 @@ criterion = torch.nn.CrossEntropyLoss()
 
 losses = []
 # train the best model, merging training and validation set
-for epoch in range(150):
+for epoch in range(200):
     loss = train(data, torch.logical_or(train_mask, val_mask), gat)
     if torch.isnan(loss):
         break
@@ -225,4 +228,4 @@ plt.show()
 # evaluate on the test set
 test_acc = compute_accuracy(gat, data.test_mask, 'Test')
 
-print(f"Test accuracy: {test_acc*100:.4f} %")
+print(f"Test accuracy: {test_acc * 100:.4f} %")
