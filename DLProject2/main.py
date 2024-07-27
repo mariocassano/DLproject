@@ -9,15 +9,12 @@ from sklearn.model_selection import train_test_split
 import torch
 from torch_geometric.data import Data
 import itertools
-import requests
-from bs4 import BeautifulSoup
-import re
 from transformer import add_https_prefix, get_text_from_url, generate_embeddings, save_data_to_csv
 from GAT import GAT
 from transformers import BertTokenizer, BertModel
 import matplotlib.pyplot as plt
 
-# seed globale = 1
+# seed globale
 torch.manual_seed(1)
 
 # imposta le opzioni per visualizzare più righe e colonne (20,20)
@@ -134,8 +131,8 @@ test_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
 val_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
 
 train_mask[train_indices] = True            # vettore di 1490 booleani dove solo i 700 (circa) di training sono True
-test_mask[test_indices] = True              # vettore di 1490 booleani dove solo i 600 (circa) di training sono True
-val_mask[val_indices] = True                # vettore di 1490 booleani dove solo i 200 (circa) di training sono True
+test_mask[test_indices] = True              # vettore di 1490 booleani dove solo i 600 (circa) di test sono True
+val_mask[val_indices] = True                # vettore di 1490 booleani dove solo i 200 (circa) di validazione sono True
 
 data.train_mask = train_mask
 data.test_mask = test_mask
@@ -185,7 +182,7 @@ def compute_accuracy(model, mask, context):
 
 best_accuracy = 0
 best_params = {}
-
+validation_list = []
 # definisce tutte le combinazioni di parametri possibili
 for hidden_dim, lr, head, optimizer in itertools.product(param_grid['hidden_dim'], param_grid['lr'],
                                                          param_grid['head'], param_grid['optimizer']):
@@ -200,7 +197,7 @@ for hidden_dim, lr, head, optimizer in itertools.product(param_grid['hidden_dim'
             break
         losses.append(loss.detach().item())
     # illustra l'andamento della loss durante le epoche
-    plt.title(f'Training modello con hidden_dim = {hidden_dim}, LR iniziale = {lr}, \nheads = {head} e optimizer = {translate_optimizer(optimizer)}')
+    plt.title(f'Training modello con hidden_dim = {hidden_dim}, LR iniziale = {lr}, \n heads = {head} e optimizer = {translate_optimizer(optimizer)}')
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.plot(losses)
@@ -208,7 +205,7 @@ for hidden_dim, lr, head, optimizer in itertools.product(param_grid['hidden_dim'
 
     train_accuracy = compute_accuracy(gat, data.train_mask,'Training')
     val_accuracy = compute_accuracy(gat, data.val_mask, 'Validation')
-    print(f'validation accuracy = {val_accuracy*100:.2f} %')
+    validation_list.append(val_accuracy)
     # seleziona il miglior modello in base alla val_accuracy più alta
     if val_accuracy > best_accuracy:
         best_accuracy = val_accuracy
@@ -219,10 +216,10 @@ for hidden_dim, lr, head, optimizer in itertools.product(param_grid['hidden_dim'
             'optimizer': type(optimizer)            # Restituisce la classe (Adam, Rmsprop, Gradient Descent, ...)
         }
 
-print(f"Best validation accuracy: {best_accuracy*100:.2f}")
+print(f"Best validation accuracy: {best_accuracy*100:.4f} %")
 print(f"Best parameters:", best_params)
 
-# istanzia il modello con i parametri che hanno ottenuto i migliori risultati
+# istanzia il modello con i parametri che hanno ottenuto i migliori risultati di accuracy
 gat = GAT(data.num_features, best_params['hidden_dim'], best_params['head'])
 optimizer = best_params['optimizer'](gat.parameters(), lr=best_params['lr'])
 criterion = torch.nn.CrossEntropyLoss()
@@ -246,4 +243,4 @@ plt.show()
 test_acc = compute_accuracy(gat, data.test_mask, 'Test')
 
 # accuracy finale
-print(f"Test accuracy: {test_acc * 100:.4f} %")
+print(f"Test accuracy: {test_acc * 100:.2f} %")
