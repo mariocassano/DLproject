@@ -14,7 +14,7 @@ from GAT import GAT
 from transformers import BertTokenizer, BertModel
 import matplotlib.pyplot as plt
 
-# seed globale
+# imposta un seed globale per la riproducibilità dei risultati
 torch.manual_seed(1)
 
 # imposta le opzioni per visualizzare più righe e colonne (20,20)
