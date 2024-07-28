@@ -27,22 +27,22 @@ file_path = 'dataset/polblogs.gml'
 # lettura del grafo GML
 graph = ig.Graph.Read_GML(file_path)
 
-# salviamo in un dataframe Pandas tutti i nodi del grafo (1490 nodi)
+# salva in un dataframe Pandas tutti i nodi del grafo (1490 nodi)
 nodes_dataframe = graph.get_vertex_dataframe()
 
 # Rimozione di eventuali duplicati
 nodes_dataframe.drop_duplicates(inplace=True)
 
-# salviamo in una variabile tutti i valori dell'attributo target "value"
+# salva in una variabile tutti i valori dell'attributo target "value"
 values = nodes_dataframe['value']
 
-# trasformiamo ogni label di ogni nodo in un URL e lo salviamo in una variabile
+# trasforma ogni label di ogni nodo in un URL e lo salva in una variabile
 urls_with_prefix = [add_https_prefix(label) for label in nodes_dataframe['label']]
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased') # istanziamo il tokenizer di Bert base
 model = BertModel.from_pretrained('bert-base-uncased') # istanza del modello Bert base che useremo per generare gli embeddings
 
-# Se è presente il file csv che contiene tutti gli embeddings di tutti i nodi non effettuiamo il download
+# Se è presente il file csv che contiene tutti gli embeddings di tutti i nodi non effettua il download
 if not os.path.exists('data2.csv'):
     texts = [get_text_from_url(url) for url in urls_with_prefix] # salviamo tutti i testi per ogni nodo
     data = []
@@ -69,7 +69,7 @@ else:
     emb = emb.apply(ast.literal_eval)
     embeddings_array = np.array(emb.tolist())
 
-# salviamo in un dataframe tutti gli archi del grafo (19025 archi)
+# salva in un dataframe tutti gli archi del grafo (19025 archi)
 edges_dataframe = graph.get_edge_dataframe()
 
 # eliminazione di eventuali duplicati
@@ -78,7 +78,7 @@ edges_dataframe.drop_duplicates(inplace=True)
 # elimina l'attributo "label"
 nodes_dataframe = nodes_dataframe.drop(['label'], axis=1)
 
-# Dividiamo l'attributo "source" se presenta due o più valori al suo interno
+# Divide l'attributo "source" se presenta due o più valori al suo interno
 nodes_dataframe['source'] = nodes_dataframe['source'].apply(lambda x: x.split(','))
 
 mlb = MultiLabelBinarizer()
@@ -91,7 +91,7 @@ source_encoded_df = pd.DataFrame(source_encoded, columns=[f'source_{cls}' for cl
 nodes_dataframe = pd.concat([nodes_dataframe, source_encoded_df], axis=1)
 nodes_dataframe = nodes_dataframe.drop(["source"], axis=1)
 
-# creo il dataframe degli embeddings e lo aggiungo come feature dei nodi, concatenando i due dataframe
+# crea il dataframe degli embeddings e lo aggiunge come feature dei nodi, concatenando i due dataframe
 embeddings_dataframe = pd.DataFrame(embeddings_array)
 nodes_dataframe = pd.concat([nodes_dataframe, embeddings_dataframe, source_encoded_df], axis=1)
 
@@ -122,11 +122,11 @@ train_indices = permutation[:num_train_nodes] # vettore che contiene i primi 900
 # e i restanti nodi come nodi di test
 test_indices = permutation[num_train_nodes:] # vettore che contiene gli altri 590 indici  (test)
 
-# Divido i 900 indici di training in 80% training e 20% validation
+# Divide i 900 indici di training in 80% training e 20% validation
 train_indices, val_indices = train_test_split(train_indices, test_size=0.2, random_state=1, shuffle=True)
 
-# Crea le maschere di training e test
-train_mask = torch.zeros(data.num_nodes, dtype=torch.bool) # vettore di 1490 booleani falsi
+# Crea le maschere di training, validation e test inizialmente tutte False
+train_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
 test_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
 val_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
 
@@ -146,7 +146,7 @@ param_grid = {
     'optimizer':[torch.optim.Adadelta, torch.optim.Adam, torch.optim.RMSprop]
 }
 
-# per stampare il nome dell'optimizer nel grafico
+# per stampare correttamente il nome dell'optimizer nel grafico
 def translate_optimizer(opt):
     if (type(opt) == torch.optim.Adam):
         return "Adam"
@@ -169,7 +169,7 @@ def train(data, mask, model):
     optimizer.step()
     return loss
 
-# effettua il test del modello e calcola l'accuracy (sia di validazione che di test)
+# effettua il test del modello e calcola l'accuracy (sia nel caso di validazione che di test)
 def compute_accuracy(model, mask, context):
     model.eval()
     with torch.no_grad():

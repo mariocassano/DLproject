@@ -46,7 +46,7 @@ def generate_embeddings(data, tokenizer, model):
     for text, target in data:
         # Tokenizza il testo utilizzando il tokenizer di BERT
         tokens = tokenizer(text, return_tensors='pt', padding=True, truncation=True)
-        # Ottieni gli input_ids e le attention_mask
+        # Ottiene gli input_ids e le attention_mask
         input_ids = tokens['input_ids']
         attention_mask = tokens['attention_mask']
         # Passa gli embeddings al modello BERT
@@ -91,7 +91,7 @@ def test(model, test_text_embeddings, test_values):
         accuracy = accuracy_score(test_values, preds)
     return accuracy
 
-# main per provare Bert e la sua classificazione (non obbligatorio per il progetto)
+# main per testare l'accuracy di Bert (senza GAT network)  e la sua classificazione (non obbligatorio per il progetto)
 if __name__ == "__main__":
     torch.manual_seed(1)
     np.random.seed(1)
