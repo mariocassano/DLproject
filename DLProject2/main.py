@@ -39,12 +39,12 @@ values = nodes_dataframe['value']
 # trasforma ogni label di ogni nodo in un URL e lo salva in una variabile
 urls_with_prefix = [add_https_prefix(label) for label in nodes_dataframe['label']]
 
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased') # istanziamo il tokenizer di Bert base
-model = BertModel.from_pretrained('bert-base-uncased') # istanza del modello Bert base che useremo per generare gli embeddings
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased') # istanzia il tokenizer di Bert base
+model = BertModel.from_pretrained('bert-base-uncased') # istanza del modello Bert base che verrà utilizzato per generare gli embeddings
 
 # Se è presente il file csv che contiene tutti gli embeddings di tutti i nodi non effettua il download
 if not os.path.exists('data2.csv'):
-    texts = [get_text_from_url(url) for url in urls_with_prefix] # salviamo tutti i testi per ogni nodo
+    texts = [get_text_from_url(url) for url in urls_with_prefix] # salva tutti i testi per ogni nodo
     data = []
     for text,value in zip(texts, values):
         if text is not None and text != '':
